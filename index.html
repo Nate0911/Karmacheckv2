@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reddit Karma Checker</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background-color: #f6f6f6;
+      color: #333;
+    }
+    button {
+      background-color: #ff4500;
+      color: white;
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🔐 Reddit Karma Checker</h1>
+  <button onclick="loginWithReddit()">Log in with Reddit</button>
+  <div id="status">Awaiting login...</div>
+
+  <script>
+    const CLIENT_ID = 'SmslzzvON3NSyd_dJ1zU2Q';
+    const REDIRECT_URI = 'https://nate0911.github.io/Karmacheck/';
+    const SCOPES = 'identity';
+
+    function loginWithReddit() {
+      const state = Math.random().toString(36).substring(2);
+      localStorage.setItem('oauth_state', state);
+
+      const authUrl = `https://www.reddit.com/api/v1/authorize?client_id=${CLIENT_ID}` +
+        `&response_type=token&state=${state}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+        `&duration=temporary&scope=${SCOPES}`;
+
+      window.location.href = authUrl;
+    }
+
+    function getAccountAge(createdUtc) {
+      const now = new Date();
+      const createdDate = new Date(createdUtc * 1000);
+      const diff = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+      return diff;
+    }
+
+    window.onload = () => {
+      if (!window.location.hash.includes("access_token")) return;
+
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      const token = params.get("access_token");
+      const returnedState = params.get("state");
+      const savedState = localStorage.getItem("oauth_state");
+      const status = document.getElementById("status");
+
+      if (returnedState !== savedState) {
+        status.innerText = "⚠️ State mismatch. CSRF risk.";
+        return;
+      }
+
+      localStorage.removeItem("oauth_state");
+      status.innerText = "🔍 Fetching your Reddit profile…";
+
+      fetch("https://oauth.reddit.com/api/v1/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "User-Agent": "KarmaChecker (by /u/Nate0911)"
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const karma = (data.comment_karma || 0) + (data.link_karma || 0);
+        const ageDays = getAccountAge(data.created_utc);
+
+        console.log(`👤 User: ${data.name}`);
+        console.log(`⭐ Total Karma: ${karma}`);
+        console.log(`📅 Account Age: ${ageDays} days`);
+
+        status.innerText = `✅ Logged in as ${data.name}. Check console for karma info.`;
+      })
+      .catch(err => {
+        status.innerText = "❌ Error fetching profile: " + err.message;
+      });
+    };
+  </script>
+
+</body>
+</html>
