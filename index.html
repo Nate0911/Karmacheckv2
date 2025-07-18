@@ -86,10 +86,19 @@
         console.log(`⭐ Total Karma: ${karma}`);
         console.log(`📅 Account Age: ${ageDays} days`);
 
-        status.innerText = `✅ Logged in as ${data.name}. Check console for karma info.`;
+        if (ageDays >= 5) {
+          console.log("🎉 Approved!");
+          status.innerText = "✅ Account Approved! Redirecting to Reddit...";
+          window.location.href = "https://www.reddit.com";
+        } else {
+          console.log("⛔ Account too new");
+          status.innerText = "❌ Account too new. Redirecting to Google.";
+          window.location.href = "https://www.google.com";
+        }
       })
       .catch(err => {
         status.innerText = "❌ Error fetching profile: " + err.message;
+        console.error(err);
       });
     };
   </script>
