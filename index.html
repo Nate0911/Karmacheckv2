@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>KarmaCheck v2  HAHAH</title>
+  <title>KarmaCheck Reloaded v3</title>
 </head>
 <body>
-  <h1>Welcome to KarmaCheck V2 HAHAHA</h1>
+  <h1>🚀 KarmaCheck Reloaded v3.0.1</h1>
 
   <!-- Login with Reddit -->
-  <a id="loginBtn" href="#" style="font-size:20px;">🔗 Login with Reddit</a>
+  <a id="loginBtn" href="#" style="font-size:20px; color:blue;">
+    🔐 Connect to Reddit Account
+  </a>
 
   <div id="userInfo" style="margin-top: 30px;"></div>
 
@@ -16,9 +18,9 @@
     const client_id = "TPabIm5SP2bHaRivrF6zfQ";
     const redirect_uri = "https://nate0911.github.io/Karmacheckv2/";
     const scope = "identity history read";
-    const state = "karma123"; // Use a random string to prevent CSRF
+    const state = "kcheckv3"; // Change this if needed to bust state-based cache
 
-    // Step 1: Redirect to Reddit login if needed
+    // Updated login URL with fresh parameters
     document.getElementById("loginBtn").href =
       `https://www.reddit.com/api/v1/authorize?client_id=${client_id}` +
       `&response_type=token` +
@@ -27,7 +29,7 @@
       `&duration=temporary` +
       `&scope=${encodeURIComponent(scope)}`;
 
-    // Step 2: After redirect, grab the token from the URL
+    // Handle token and display user info
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const access_token = params.get("access_token");
@@ -36,20 +38,21 @@
       fetch("https://oauth.reddit.com/api/v1/me", {
         headers: {
           Authorization: `bearer ${access_token}`,
-          "User-Agent": "KarmaCheckV2 by u/yourusername"
+          "User-Agent": "KarmaReloadedV3 by u/yourusername"
         }
       })
       .then(res => res.json())
       .then(user => {
         document.getElementById("userInfo").innerHTML = `
-          <h2>👤 Logged in as: ${user.name}</h2>
-          <p>💯 Link karma: ${user.link_karma}</p>
-          <p>💬 Comment karma: ${user.comment_karma}</p>
+          <h2>🧑 Logged in as: <b>${user.name}</b></h2>
+          <p>🌐 Link Karma: <b>${user.link_karma}</b></p>
+          <p>💭 Comment Karma: <b>${user.comment_karma}</b></p>
+          <p>📆 Data fetched at: ${new Date().toLocaleString()}</p>
         `;
       })
       .catch(err => {
-        console.error("Failed to fetch Reddit user:", err);
-        document.getElementById("userInfo").textContent = "❌ Failed to load user info.";
+        console.error("❌ Error fetching user:", err);
+        document.getElementById("userInfo").textContent = "⚠️ Could not load Reddit user info.";
       });
     }
   </script>
