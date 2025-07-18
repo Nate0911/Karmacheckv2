@@ -2,106 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Reddit Karma Checker</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background-color: #f6f6f6;
-      color: #333;
-    }
-    button {
-      background-color: #ff4500;
-      color: white;
-      padding: 10px 20px;
-      font-size: 18px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #status {
-      margin-top: 20px;
-      font-size: 16px;
-    }
-  </style>
+  <title>KarmaCheck v2</title>
 </head>
 <body>
+  <h1>Welcome to KarmaCheck V2</h1>
 
-  <h1>🔐 Reddit Karma Checker</h1>
-  <button onclick="loginWithReddit()">Log in with Reddit</button>
-  <div id="status">Awaiting login...</div>
+  <!-- Login with Reddit -->
+  <a id="loginBtn" href="#" style="font-size:20px;">🔗 Login with Reddit</a>
+
+  <div id="userInfo" style="margin-top: 30px;"></div>
 
   <script>
-    const CLIENT_ID = 'qvVKAi5laLb_OsDzQ0DGkw'; // ✅ Updated Client ID
-    const REDIRECT_URI = 'https://nate0911.github.io/Karmacheckv2/'; // ✅ Updated Redirect URI
-    const SCOPES = 'identity';
+    const client_id = "TPabIm5SP2bHaRivrF6zfQ";
+    const redirect_uri = "https://nate0911.github.io/Karmacheckv2/";
+    const scope = "identity history read";
+    const state = "karma123"; // Use a random string to prevent CSRF
 
-    function loginWithReddit() {
-      const state = Math.random().toString(36).substring(2);
-      localStorage.setItem('oauth_state', state);
+    // Step 1: Redirect to Reddit login if needed
+    document.getElementById("loginBtn").href =
+      `https://www.reddit.com/api/v1/authorize?client_id=${client_id}` +
+      `&response_type=token` +
+      `&state=${state}` +
+      `&redirect_uri=${encodeURIComponent(redirect_uri)}` +
+      `&duration=temporary` +
+      `&scope=${encodeURIComponent(scope)}`;
 
-      const authUrl = `https://www.reddit.com/api/v1/authorize?client_id=${CLIENT_ID}` +
-        `&response_type=token&state=${state}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-        `&duration=temporary&scope=${SCOPES}`;
+    // Step 2: After redirect, grab the token from the URL
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const access_token = params.get("access_token");
 
-      window.location.href = authUrl;
-    }
-
-    function getAccountAge(createdUtc) {
-      const now = new Date();
-      const createdDate = new Date(createdUtc * 1000);
-      const diff = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
-      return diff;
-    }
-
-    window.onload = () => {
-      if (!window.location.hash.includes("access_token")) return;
-
-      const params = new URLSearchParams(window.location.hash.slice(1));
-      const token = params.get("access_token");
-      const returnedState = params.get("state");
-      const savedState = localStorage.getItem("oauth_state");
-      const status = document.getElementById("status");
-
-      if (returnedState !== savedState) {
-        status.innerText = "⚠️ State mismatch. CSRF risk.";
-        return;
-      }
-
-      localStorage.removeItem("oauth_state");
-      status.innerText = "🔍 Fetching your Reddit profile…";
-
+    if (access_token) {
       fetch("https://oauth.reddit.com/api/v1/me", {
         headers: {
-          Authorization: `Bearer ${token}`,
-          "User-Agent": "KarmaChecker (by /u/Nate0911)"
+          Authorization: `bearer ${access_token}`,
+          "User-Agent": "KarmaCheckV2 by u/yourusername"
         }
       })
       .then(res => res.json())
-      .then(data => {
-        const karma = (data.comment_karma || 0) + (data.link_karma || 0);
-        const ageDays = getAccountAge(data.created_utc);
-
-        console.log(`👤 User: ${data.name}`);
-        console.log(`⭐ Total Karma: ${karma}`);
-        console.log(`📅 Account Age: ${ageDays} days`);
-
-        if (ageDays >= 5) {
-          console.log("🎉 Approved!");
-          status.innerText = "✅ Account Approved! Redirecting to Reddit...";
-          window.location.href = "https://www.reddit.com";
-        } else {
-          console.log("⛔ Account too new");
-          status.innerText = "❌ Account too new. Redirecting to Google.";
-          window.location.href = "https://www.google.com";
-        }
+      .then(user => {
+        document.getElementById("userInfo").innerHTML = `
+          <h2>👤 Logged in as: ${user.name}</h2>
+          <p>💯 Link karma: ${user.link_karma}</p>
+          <p>💬 Comment karma: ${user.comment_karma}</p>
+        `;
       })
       .catch(err => {
-        status.innerText = "❌ Error fetching profile: " + err.message;
-        console.error(err);
+        console.error("Failed to fetch Reddit user:", err);
+        document.getElementById("userInfo").textContent = "❌ Failed to load user info.";
       });
-    };
+    }
   </script>
-
 </body>
 </html>
